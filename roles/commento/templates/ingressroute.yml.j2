@@ -1,0 +1,26 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: {{deploy_name}}-tls
+  namespace: {{namespace}}
+spec:
+  entryPoints:
+    - websecure
+  routes:
+  - kind: Rule
+    priority: {{rule_priority}}
+    match: ({% for host in record_list %}HostHeader(`{{host}}`) {{ " || " if not loop.last else "" }}{% endfor %})  && PathPrefix(`{{base_path}}/`)
+    services:
+    - name: {{deploy_name}}
+      port: 8080
+      helthcheck:
+        path: {{base_path}}/
+        host: {{record_list.0}}
+        intervalSeconds: 10
+        timeoutSeconds: 5
+    middlewares:
+      - name: security
+  tls:
+    options:
+      name: mytlsoption
+      namespace: {{namespace}}

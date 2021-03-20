@@ -1,0 +1,35 @@
+---
+# tasks file for traefik
+
+- name: Create traefik deployment path
+  file:
+    path: "{{item}}"
+    mode: '0700'
+    state: directory
+  loop:
+    - "{{deployment_root_path}}/{{deploy_name}}"
+    - "{{deployment_root_path}}/{{deploy_name}}/content/"
+    - "{{deployment_root_path}}/{{deploy_name}}/content/certs"
+
+- name: Create Kubernetes templates
+  template:
+    src: "{{item}}.yml.j2"
+    dest: "{{deployment_root_path}}/{{deploy_name}}/{{item}}.yml"
+  loop:
+    "{{template_files}}"
+  register: deployment_changes
+
+- name: Delete existing Traefik (Port binding)
+  k8s:
+    src: "{{deployment_root_path}}/{{deploy_name}}/deployment.yml"
+    state: absent
+  when: deployment_changes.changed
+    
+
+- name: Deploy Kubernetes objects
+  k8s:
+    src: "{{deployment_root_path}}/{{deploy_name}}/{{item}}.yml"
+    state: present
+  loop:
+    "{{template_files}}"
+  when: deployment_changes.changed

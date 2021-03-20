@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{deploy_name}}
+  namespace: {{namespace}}
+  labels:
+    app: {{deploy_name}}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{deploy_name}}
+  template:
+    metadata:
+      labels:
+        app: {{deploy_name}}
+    spec:
+      containers:
+      - name: {{deploy_name}}
+        image: {{image_app}}:{{version}}
+        ports:
+        - containerPort: 8080
+        env:
+        - name: COMMENTO_ORIGIN
+          value: "https://{{record_list.0}}"
+        - name: COMMENTO_PORT
+          value: "8080"
+        - name: COMMENTO_POSTGRE
+          value: "postgres://postgres:dbpassword@localhost:5432/commento?sslmode=disable"
+        - name: COMMENTO_FORBID_NEW_OWNERS
+          value: "true"
+        - name: COMMENTO_SMTP_HOST
+          value: "smtp.mailprovider.com"
+        - name: COMMENTO_SMTP_PORT
+          value: "587"
+        - name: COMMENTO_SMTP_USERNAME
+          value: "mymailadress@example.com"
+        - name: COMMENTO_SMTP_PASSWORD
+          value: "dbpassword"
+        - name: COMMENTO_SMTP_FROM_ADDRESS
+          value: "mymailadress@example.com"
+        - name: COMMENTO_AKISMET_KEY
+          value: "xxxxxxxxxxx"
+      - name: postgres
+        volumeMounts:
+        - name : postgres-storage
+          mountPath: /var/lib/postgresql/data
+        image: {{image_db}}:{{version_db}}
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_PASSWORD
+          value: dbpassword
+        - name: POSTGRES_DB
+          value: commento
+        resources:
+          limits:
+            cpu: "0.2"
+            memory: "256Mi"
+      volumes:
+      - name: postgres-storage
+        hostPath:
+          path: {{deployment_root_path}}/{{deploy_name}}/content/
+          type: Directory

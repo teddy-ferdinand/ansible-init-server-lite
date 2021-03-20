@@ -1,0 +1,13 @@
+#!/bin/bash
+
+. /root/.bash_profile
+
+DATE=$(date '+%Y%m%d')
+HOME=/root
+AWS_CONFIG_FILE="${HOME}/.aws/config"
+
+
+cd /home/
+tar cvfz ./backup_${DATE}.tar.gz ./kube/
+/usr/local/bin/aws s3 cp ./backup_${DATE}.tar.gz s3://{{backup_bucket}}/backup_${DATE}.tar.gz
+rm ./backup_${DATE}.tar.gz

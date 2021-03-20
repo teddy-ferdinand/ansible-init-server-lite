@@ -1,0 +1,8 @@
+---
+# vars file for traefik
+namespace: default
+image: ghost
+template_files:
+  - deployment
+  - service
+  - ingressroute

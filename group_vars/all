@@ -1,0 +1,40 @@
+---
+# Force Interpreter to Python3
+ansible_python_interpreter: auto
+
+k3s_version: v1.20.4+k3s1
+k3s_directory: /tmp
+
+deployment_root_path: /home/kube
+
+master_mail_address: mymailaddress@example.com
+
+backup_bucket: mybackupbucket
+aws_access_key: xxxxxxxxxxxxxxxxxxxx
+aws_secret_access_key: xxxxxxxxxxxxxxxxxxxx
+
+#Traefik
+traefik_pilot_token: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+traefik_version: v2.4.7
+
+#Ghost
+ghost_version: 3.42.3
+ghost_installs:
+  - 
+    base_path: ""
+    rule_priority: 1
+    deploy_name: tfe-fr
+    record_list:
+      - tferdinand.net
+      - www.tferdinand.net
+  - 
+    base_path: "/en"
+    rule_priority: 10
+    deploy_name: tfe-en
+    record_list:
+      - tferdinand.net
+      - www.tferdinand.net
+
+#Commento
+commento_app_version: v1.8.0
+commento_db_version: 9.6.18-alpine

@@ -1,0 +1,9 @@
+---
+# vars file for traefik
+namespace: default
+image_app: registry.gitlab.com/commento/commento
+image_db: postgres
+template_files:
+  - deployment
+  - service
+  - ingressroute

@@ -1,0 +1,129 @@
+- hosts: all
+  become: true
+  tasks:
+  - name: Install prerequisites
+    apt:
+      name: 
+        - python3-pip
+        - curl
+        - git
+      state: latest
+
+  - name: Install openshift package (k8s ansible module)
+    pip:
+      name: 
+        - openshift
+        - awscli
+        - awscli_plugin_endpoint
+    
+  - name: Deploy backup script
+    template:
+      src: backup.sh.j2
+      dest: /home/backup.sh
+      mode: 0700
+    
+  - name: Create backup crontab
+    ansible.builtin.cron:
+      name: "Kubernetes content backup"
+      minute: "0"
+      hour: "2"
+      job: "/home/backup.sh"
+    
+  - name: Create AWS directory
+    file:
+      path: /root/.aws
+      mode: 0700
+      state: directory
+
+  - name: Deploy AWS credentials
+    template:
+      src: aws_credentials.j2
+      dest: /root/.aws/credentials
+      mode: 0600
+
+  - name: Deploy AWS configs
+    template:
+      src: aws_config.j2
+      dest: /root/.aws/config
+      mode: 0600
+
+  - name: "Download K3S"
+    get_url:
+      url: https://get.k3s.io
+      dest: "{{k3s_directory}}/k3s_installer.sh"
+      mode: 0700
+    tags:    
+    - full_install
+
+  - name: "Start k3s"
+    shell:
+      cmd: "export INSTALL_K3S_EXEC=\"--no-deploy=traefik --no-deploy servicelb\" && \
+            export INSTALL_K3S_VERSION=\"{{k3s_version}}\" && \
+            sh {{k3s_directory}}/k3s_installer.sh"
+    tags:
+    - full_install
+
+  - name: Create KubeConfig directory
+    file:
+      path: /root/.kube
+      mode: '0700'
+      state: directory
+    tags:
+    - full_install
+
+  - name: Copy K3S configuration
+    copy:
+      src: /etc/rancher/k3s/k3s.yaml
+      remote_src: yes
+      dest: ~/.kube/config
+    tags:
+    - full_install
+
+  - name: Wait for node to be ready
+    shell: "kubectl get nodes"
+    register: nodes
+    until:      
+      - '" Ready "  in nodes.stdout'      
+    retries: 60
+    delay: 5
+  
+  - name: Create deployment root path
+    file:
+      path: "{{deployment_root_path}}"
+      mode: 0700
+      state: directory
+
+  - name: Install Traefik
+    include_role:
+      name: traefik
+    vars:
+      deploy_name: traefik
+      version: "{{traefik_version}}"
+      pilot_token: "{{traefik_pilot_token}}"
+
+  - name: Install Ghost
+    include_role:
+      name: ghost
+    vars:
+      deploy_name: "ghost-{{ghosts.deploy_name}}"
+      version: "{{ghost_version}}"
+      base_path: "{{ghosts.base_path}}"
+      rule_priority: "{{ghosts.rule_priority}}"
+      record_list:
+        "{{ghosts.record_list}}"
+    loop:
+      "{{ghost_installs}}"
+    loop_control:
+      loop_var: ghosts
+
+  - name: Install Commento
+    include_role:
+      name: commento
+    vars:
+      deploy_name: commento
+      version: "{{commento_app_version}}"
+      version_db: "{{commento_db_version}}"
+      rule_priority: 1
+      base_path: ""
+      record_list:
+        - commento.tferdinand.net

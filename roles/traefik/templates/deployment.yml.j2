@@ -1,0 +1,49 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{deploy_name}}
+  namespace: {{namespace}}
+  labels:
+    k8s-app: {{deploy_name}}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: {{deploy_name}}
+  template:
+    metadata:
+      labels:
+        k8s-app: {{deploy_name}}
+        name: {{deploy_name}}
+    spec:
+      hostNetwork: true # workaround
+      serviceAccountName: {{deploy_name}}
+      terminationGracePeriodSeconds: 60
+      containers:
+      - image: {{image}}:{{version}}
+        name: {{deploy_name}}
+        volumeMounts:
+          - mountPath: "/cert/"
+            name: cert
+        ports:
+        - name: http
+          containerPort: 80
+        - name: https
+          containerPort: 443
+        - name: traefik
+          containerPort: 8080
+        args:
+        - --providers.kubernetescrd
+        - --entrypoints.web.address=:80
+        - --entrypoints.websecure.address=:443
+        - --certificatesresolvers.le.acme.email={{master_mail_address}}
+        - --certificatesresolvers.le.acme.storage=/cert/acme.json
+        - --certificatesResolvers.le.acme.httpChallenge.entryPoint=web
+        - --pilot.token={{pilot_token}}
+        - --accesslog=true
+        - --accesslog.fields.headers.defaultmode=keep
+        - --accesslog.fields.headers.names.User-Agent=keep
+      volumes:
+        - name: cert
+          hostPath:
+            path: {{deployment_root_path}}/{{deploy_name}}/content/certs/

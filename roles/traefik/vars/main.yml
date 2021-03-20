@@ -1,0 +1,13 @@
+---
+# vars file for traefik
+namespace: traefik
+image: traefik
+template_files:
+  - namespace
+  - clusterrole
+  - clusterrolebinding
+  - serviceaccount
+  - deployment
+  - service
+  - crd
+  - middlewares

@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{deploy_name}}
+  namespace: {{namespace}}
+  labels:
+    app: {{deploy_name}}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{deploy_name}}
+  template:
+    metadata:
+      labels:
+        app: {{deploy_name}}
+    spec:
+      containers:
+      - name: {{deploy_name}}
+        volumeMounts:
+        - name : {{deploy_name}}-storage
+          mountPath : /var/lib/ghost/content
+        image: {{image}}:{{version}}
+        ports:
+        - containerPort: 2368
+        env:
+        - name: url
+          value: https://{{record_list.0}}{{base_path}}/
+        readinessProbe:
+          tcpSocket:
+            port: 2368
+          initialDelaySeconds: 10
+          timeoutSeconds: 3
+        livenessProbe:
+          tcpSocket:
+            port: 2368
+          initialDelaySeconds: 10
+          timeoutSeconds: 3
+        resources:
+          limits:
+            cpu: "0.4"
+            memory: "512Mi"
+      volumes:
+      - name: {{deploy_name}}-storage
+        hostPath:
+          path: {{deployment_root_path}}/{{deploy_name}}/content/
+          type: Directory
+

@@ -1,0 +1,47 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: TLSOption
+metadata:
+  name: mytlsoption
+  namespace: default
+spec:
+  minVersion: VersionTLS12
+  cipherSuites:
+    - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+    - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+    - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+    - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+    - TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
+    - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305
+  sniStrict: true
+---
+
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: security
+  namespace: default
+spec:
+  headers:
+    addVaryHeader: true
+    #frameDeny: true
+    customFrameOptionsValue: sameorigin
+    sslRedirect: true
+    browserXssFilter: true
+    contentTypeNosniff: true
+    #HSTS Configuration
+    stsIncludeSubdomains: true
+    stsPreload: true
+    stsSeconds: 31536000
+    customResponseHeaders:
+      x-powered-by: ""
+
+---
+# Redirect to https
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: redirectscheme
+  namespace: default
+spec:
+  redirectScheme:
+    scheme: https
