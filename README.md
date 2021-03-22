@@ -14,4 +14,5 @@ Many values have to be fill up :
 This playbooks only intends to demonstrate how to do a basic installation from sratch.
 
 For more information, please read the following blogpost :
-COMING SOON
+
+[FR] https://tferdinand.net/comment-mon-serveur-est-revenu-rapidement-en-ligne/
